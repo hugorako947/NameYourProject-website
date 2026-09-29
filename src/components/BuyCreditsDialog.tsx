@@ -31,11 +31,13 @@ import type { ApiErrorBody, CheckoutRequest, CheckoutResponse } from "@/types";
 interface BuyCreditsDialogProps {
   open: boolean;
   onClose: () => void;
+  /** false = paiement pas encore ouvert : les packs restent visibles, le paiement est désactivé */
+  paymentsEnabled: boolean;
 }
 
 type CheckoutStatus = "idle" | "loading" | "unavailable" | "consent" | "error";
 
-export function BuyCreditsDialog({ open, onClose }: BuyCreditsDialogProps) {
+export function BuyCreditsDialog({ open, onClose, paymentsEnabled }: BuyCreditsDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -58,12 +60,12 @@ export function BuyCreditsDialog({ open, onClose }: BuyCreditsDialogProps) {
     >
       {/* Contenu monté uniquement à l'ouverture : les prix sont formatés
           dans le navigateur, jamais pendant le rendu serveur. */}
-      {open && <DialogContent onClose={onClose} />}
+      {open && <DialogContent onClose={onClose} paymentsEnabled={paymentsEnabled} />}
     </dialog>
   );
 }
 
-function DialogContent({ onClose }: { onClose: () => void }) {
+function DialogContent({ onClose, paymentsEnabled }: { onClose: () => void; paymentsEnabled: boolean }) {
   const { t, lang, locale, currency } = useApp();
   const [packId, setPackId] = useState<PackId>(DEFAULT_PACK_ID);
   const [status, setStatus] = useState<CheckoutStatus>("idle");
@@ -176,6 +178,13 @@ function DialogContent({ onClose }: { onClose: () => void }) {
         </p>
       )}
 
+      {!paymentsEnabled && (
+        <p role="status" className="mt-5 rounded-lg bg-accent/10 p-3 text-sm text-ink">
+          {t.buyUnavailable}
+        </p>
+      )}
+
+      {paymentsEnabled && (
       <label className="mt-5 flex cursor-pointer items-start gap-3 text-sm text-ink">
         <input
           type="checkbox"
@@ -195,14 +204,19 @@ function DialogContent({ onClose }: { onClose: () => void }) {
           </a>
         </span>
       </label>
+      )}
 
       <button
         type="button"
         onClick={handlePay}
-        disabled={status === "loading" || !consent}
+        disabled={!paymentsEnabled || status === "loading" || !consent}
         className="mt-6 w-full rounded-full bg-accent py-3.5 text-base font-bold text-on-accent transition hover:brightness-95 disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
-        {status === "loading" ? t.buyRedirecting : t.buyPayBtn(formatUsd(selectedPack.priceUsd, locale))}
+        {!paymentsEnabled
+          ? t.errors.PAYMENT_NOT_CONFIGURED
+          : status === "loading"
+            ? t.buyRedirecting
+            : t.buyPayBtn(formatUsd(selectedPack.priceUsd, locale))}
       </button>
     </div>
   );

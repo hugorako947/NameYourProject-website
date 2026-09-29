@@ -56,8 +56,6 @@ export function QuotaBar(props: QuotaBarProps) {
 
   const hasCredits = credits !== null && credits > 0;
   const exhausted = remaining === 0 && !hasCredits;
-  // En ligne, le bouton d'achat n'apparaît que si le paiement est réellement ouvert
-  const showBuy = paymentsEnabled || process.env.NODE_ENV !== "production";
 
   return (
     <div className="flex flex-col items-center gap-3">
@@ -92,22 +90,21 @@ export function QuotaBar(props: QuotaBarProps) {
         )}
       </div>
 
-      {showBuy && (
-        <button
-          type="button"
-          onClick={props.onBuy}
-          className={cn(
-            "inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors",
-            "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
-            exhausted
-              ? "border-accent bg-accent text-on-accent hover:brightness-95"
-              : "border-accent/60 text-ink hover:border-accent hover:bg-accent/10"
-          )}
-        >
-          <Plus aria-hidden className="h-4 w-4" />
-          {t.buyCreditsBtn}
-        </button>
-      )}
+      {/* Toujours visible : si le paiement n'est pas ouvert, la fenêtre d'achat l'indique */}
+      <button
+        type="button"
+        onClick={props.onBuy}
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors",
+          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+          exhausted
+            ? "border-accent bg-accent text-on-accent hover:brightness-95"
+            : "border-accent/60 text-ink hover:border-accent hover:bg-accent/10"
+        )}
+      >
+        <Plus aria-hidden className="h-4 w-4" />
+        {t.buyCreditsBtn}
+      </button>
 
       {credits !== null && creditsEmail ? (
         <p className="text-xs text-muted">

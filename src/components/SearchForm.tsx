@@ -541,7 +541,7 @@ export function SearchForm({
         {errorMessage && (
           <div ref={formErrorRef} role="alert" className="flex flex-col items-center gap-3 text-center">
             <p className="text-sm font-medium text-danger">{errorMessage}</p>
-            {errorCode === "RATE_LIMITED" && (quota.paymentsEnabled || process.env.NODE_ENV !== "production") && (
+            {errorCode === "RATE_LIMITED" && (
               <div className="flex flex-col items-center gap-2">
                 <button
                   type="button"
@@ -588,7 +588,7 @@ export function SearchForm({
         </div>
       </form>
 
-      <BuyCreditsDialog open={buyOpen} onClose={() => setBuyOpen(false)} />
+      <BuyCreditsDialog open={buyOpen} onClose={() => setBuyOpen(false)} paymentsEnabled={quota.paymentsEnabled} />
       <RestoreCreditsDialog
         open={restoreOpen}
         onClose={() => setRestoreOpen(false)}

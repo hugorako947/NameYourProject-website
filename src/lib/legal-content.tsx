@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { LEGAL } from "@/lib/legal";
+import { LEGAL, loc, type Localized } from "@/lib/legal";
 import { SITE_NAME } from "@/lib/i18n";
 
 // =============================================================================
@@ -16,6 +16,17 @@ import { SITE_NAME } from "@/lib/i18n";
 
 export type LegalLang = "fr" | "en";
 
+/**
+ * Services réellement actifs (lus côté serveur, voir lib/active-services.ts) :
+ * les textes ne mentionnent comme actifs que les services effectivement utilisés.
+ */
+export interface ActiveServices {
+  payments: boolean;
+  emails: boolean;
+  sharedStore: boolean;
+  antiBot: boolean;
+}
+
 export interface LegalSection {
   title: string;
   body: ReactNode;
@@ -27,8 +38,9 @@ export interface LegalDoc {
 }
 
 /** Affiche la valeur, ou "[À compléter]" en rouge si elle est vide. */
-function Fill({ value, lang }: { value: string; lang: LegalLang }) {
-  if (value.trim()) return <>{value}</>;
+function Fill({ value, lang }: { value: Localized; lang: LegalLang }) {
+  const text = loc(value, lang);
+  if (text.trim()) return <>{text}</>;
   return (
     <mark className="rounded bg-danger/15 px-1 font-medium text-danger">
       {lang === "fr" ? "[À compléter]" : "[To be completed]"}
@@ -52,6 +64,35 @@ const Ext = ({ href, children }: { href: string; children: ReactNode }) => (
 const pub = LEGAL.publisher;
 const host = LEGAL.host;
 const med = LEGAL.consumerMediator;
+
+/** "a, b et c" / "a, b and c" */
+function joinList(items: string[], lang: LegalLang): string {
+  if (items.length <= 1) return items.join("");
+  return `${items.slice(0, -1).join(", ")} ${lang === "fr" ? "et" : "and"} ${items[items.length - 1]}`;
+}
+
+function providers(lang: LegalLang, s: ActiveServices): string {
+  const h = loc(host.name, lang) || (lang === "fr" ? "[À compléter]" : "[To be completed]");
+  const fr = [
+    `l'hébergeur (${h})`,
+    "Google (IA Gemini et recherche Google)",
+    "les registres de noms de domaine",
+    s.payments && "le prestataire de paiement Stripe",
+    s.payments && s.emails && "le service d'envoi d'e-mails Resend",
+    s.sharedStore && `la base de données Upstash (compteur de générations${s.payments ? " et générations achetées" : ""})`,
+    s.antiBot && "le service anti-robots Cloudflare Turnstile",
+  ];
+  const en = [
+    `the hosting provider (${h})`,
+    "Google (Gemini AI and Google Search)",
+    "domain name registries",
+    s.payments && "the payment provider Stripe",
+    s.payments && s.emails && "the email provider Resend",
+    s.sharedStore && `the Upstash database (generation counter${s.payments ? " and purchased generations" : ""})`,
+    s.antiBot && "the Cloudflare Turnstile anti-bot service",
+  ];
+  return joinList((lang === "fr" ? fr : en).filter((x): x is string => typeof x === "string"), lang);
+}
 
 function Contact({ lang }: { lang: LegalLang }) {
   return pub.email ? (
@@ -183,7 +224,7 @@ export function legalNotice(lang: LegalLang): LegalDoc {
 // CONDITIONS D'UTILISATION (incluant les conditions de vente)
 // ═════════════════════════════════════════════════════════════════════════════
 
-export function termsOfUse(lang: LegalLang): LegalDoc {
+export function termsOfUse(lang: LegalLang, services: ActiveServices): LegalDoc {
   if (lang === "fr") {
     return {
       title: "Conditions d'utilisation",
@@ -284,6 +325,12 @@ export function termsOfUse(lang: LegalLang): LegalDoc {
           title: "8. Achat de générations",
           body: (
             <>
+              {!services.payments && (
+                <P>
+                  <strong className="text-ink">L&apos;achat en ligne n&apos;est pas encore ouvert.</strong> Les conditions
+                  ci-dessous s&apos;appliqueront dès son ouverture.
+                </P>
+              )}
               <P>
                 Au-delà de la limite gratuite, vous pouvez acheter des packs de générations. Les prix affichés au moment
                 du paiement font foi. Les générations achetées n&apos;expirent pas. Le paiement est traité par un
@@ -445,6 +492,12 @@ export function termsOfUse(lang: LegalLang): LegalDoc {
         title: "8. Buying generations",
         body: (
           <>
+            {!services.payments && (
+              <P>
+                <strong className="text-ink">Online purchase is not open yet.</strong> The terms below will apply as soon
+                as it opens.
+              </P>
+            )}
             <P>
               Beyond the free limit, you can buy packs of generations. The prices shown at checkout apply. Purchased
               generations do not expire. Payment is handled by a secure payment provider: the site never has access to
@@ -526,7 +579,7 @@ const COOKIES = [
   { name: "nyp-admin, nyp-admin-pause", fr: "Accès administrateur (uniquement pour l'éditeur du site)", en: "Administrator access (site publisher only)", duration: { fr: "1 an", en: "1 year" } },
 ];
 
-function CookieTable({ lang }: { lang: LegalLang }) {
+function CookieTable({ lang, payments }: { lang: LegalLang; payments: boolean }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[28rem] border-collapse text-start text-sm">
@@ -538,7 +591,7 @@ function CookieTable({ lang }: { lang: LegalLang }) {
           </tr>
         </thead>
         <tbody>
-          {COOKIES.map((c) => (
+          {COOKIES.filter((c) => payments || c.name !== "nyp-credits").map((c) => (
             <tr key={c.name} className="border-b border-border">
               <td className="py-2 pe-4 font-mono text-xs text-ink">{c.name}</td>
               <td className="py-2 pe-4">{c[lang]}</td>
@@ -551,7 +604,7 @@ function CookieTable({ lang }: { lang: LegalLang }) {
   );
 }
 
-export function privacyPolicy(lang: LegalLang): LegalDoc {
+export function privacyPolicy(lang: LegalLang, services: ActiveServices): LegalDoc {
   if (lang === "fr") {
     return {
       title: "Politique de confidentialité",
@@ -611,6 +664,8 @@ export function privacyPolicy(lang: LegalLang): LegalDoc {
                 (stockage local). Ils ne sont jamais envoyés à nos serveurs et disparaissent si vous effacez les
                 données de navigation.
               </li>
+              {services.payments ? (
+                <>
               <li>
                 <strong className="text-ink">Achats</strong> : le paiement est réalisé sur la page sécurisée de Stripe,
                 qui traite votre adresse e-mail, votre pays et vos informations de paiement (exécution du contrat). Vos
@@ -624,6 +679,13 @@ export function privacyPolicy(lang: LegalLang): LegalDoc {
                 vos générations, votre adresse sert uniquement à vous envoyer un code à 6 chiffres, valable 15 minutes.
                 Les e-mails (code, confirmation d&apos;achat) sont envoyés par notre prestataire d&apos;envoi Resend.
               </li>
+                </>
+              ) : (
+                <li>
+                  <strong className="text-ink">Achats</strong> : l&apos;achat en ligne n&apos;est pas encore ouvert. Aucune
+                  adresse e-mail ni aucune donnée de paiement n&apos;est collectée pour l&apos;instant.
+                </li>
+              )}
             </UL>
           ),
         },
@@ -635,7 +697,7 @@ export function privacyPolicy(lang: LegalLang): LegalDoc {
                 Le site n&apos;utilise que des cookies nécessaires aux fonctions que vous demandez (préférences). Ils ne
                 servent ni à la publicité ni au suivi, et ne nécessitent donc pas votre consentement.
               </P>
-              <CookieTable lang={lang} />
+              <CookieTable lang={lang} payments={services.payments} />
             </>
           ),
         },
@@ -644,10 +706,7 @@ export function privacyPolicy(lang: LegalLang): LegalDoc {
           body: (
             <P>
               Les données ne sont ni vendues ni louées. Elles sont traitées uniquement par les prestataires nécessaires
-              au service : l&apos;hébergeur (<Fill value={host.name} lang={lang} />), Google (IA Gemini), les registres
-              de noms de domaine, le prestataire de paiement Stripe, le service d&apos;envoi d&apos;e-mails Resend, la
-              base de données Upstash (compteur et générations achetées) et, dès son activation, le service
-              anti-robots Cloudflare Turnstile.
+              au service : {providers(lang, services)}.
             </P>
           ),
         },
@@ -734,6 +793,8 @@ export function privacyPolicy(lang: LegalLang): LegalDoc {
               <strong className="text-ink">Favorites</strong>: stored only in your browser (local storage). They are
               never sent to our servers and are deleted if you clear your browsing data.
             </li>
+            {services.payments ? (
+              <>
             <li>
               <strong className="text-ink">Purchases</strong>: payment takes place on Stripe&apos;s secure page, which
               processes your email address, country and payment details (performance of the contract). Your card
@@ -746,6 +807,13 @@ export function privacyPolicy(lang: LegalLang): LegalDoc {
               your address is used only to send you a 6-digit code, valid for 15 minutes. Emails (code, purchase
               confirmation) are sent by our email provider Resend.
             </li>
+              </>
+            ) : (
+              <li>
+                <strong className="text-ink">Purchases</strong>: online purchase is not open yet. No email address or
+                payment data is collected for now.
+              </li>
+            )}
           </UL>
         ),
       },
@@ -757,7 +825,7 @@ export function privacyPolicy(lang: LegalLang): LegalDoc {
               The site only uses cookies required for features you request (preferences). They are not used for
               advertising or tracking, and therefore do not require your consent.
             </P>
-            <CookieTable lang={lang} />
+            <CookieTable lang={lang} payments={services.payments} />
           </>
         ),
       },
@@ -765,10 +833,8 @@ export function privacyPolicy(lang: LegalLang): LegalDoc {
         title: "Recipients and providers",
         body: (
           <P>
-            Data is never sold or rented. It is processed only by the providers needed for the service: the hosting
-            provider (<Fill value={host.name} lang={lang} />), Google (Gemini AI), domain name registries, the payment
-            provider Stripe, the email provider Resend, the Upstash database (counter and purchased generations) and,
-            once enabled, the Cloudflare Turnstile anti-bot service.
+            Data is never sold or rented. It is processed only by the providers needed for the service:{" "}
+            {providers(lang, services)}.
           </P>
         ),
       },
