@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { hasPersistentStore } from "@/lib/redis";
+import { configuredSiteUrl } from "@/lib/site";
 import { getPack } from "@/lib/pricing";
 import { isLang, type Lang } from "@/lib/i18n";
 import {
@@ -58,7 +59,7 @@ export function paymentsStatus(): PaymentsStatus {
 }
 
 export function siteUrlFrom(req: Request): string {
-  return process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "") || new URL(req.url).origin;
+  return configuredSiteUrl() ?? new URL(req.url).origin;
 }
 
 export interface FulfillResult {

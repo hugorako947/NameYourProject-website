@@ -58,3 +58,18 @@ describe("Prix", () => {
     expect(formatApproxLocal(10, "USD", "en-US")).toBeNull();
   });
 });
+
+describe("Adresse du site", () => {
+  it("tolère un NEXT_PUBLIC_SITE_URL saisi sans https:// ou avec une barre finale", async () => {
+    const { siteUrl } = await import("@/lib/site");
+    for (const [value, expected] of [
+      ["name-your-project-website.vercel.app", "https://name-your-project-website.vercel.app"],
+      ["https://nameyourproject.vercel.app/", "https://nameyourproject.vercel.app"],
+      ["  http://localhost:3000  ", "http://localhost:3000"],
+    ]) {
+      process.env.NEXT_PUBLIC_SITE_URL = value;
+      expect(siteUrl()).toBe(expected);
+    }
+    delete process.env.NEXT_PUBLIC_SITE_URL;
+  });
+});
