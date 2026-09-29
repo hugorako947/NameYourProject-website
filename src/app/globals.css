@@ -1,0 +1,280 @@
+@import "tailwindcss";
+
+/* =============================================================================
+   NameYourProject — Design tokens
+   Toutes les couleurs du site passent par ces variables : c'est ce qui permet
+   aux thèmes (dont Inversé et Personnalisé) de recolorer TOUT le site.
+   ============================================================================= */
+@theme {
+  --color-paper: #fafafc; /* fond de page */
+  --color-ink: #14171f; /* texte principal */
+  --color-muted: #4e5564; /* texte secondaire + bordures de contrôles */
+  --color-border: #e5e7eb; /* séparateurs décoratifs */
+  --color-danger: #dc2626; /* messages d'erreur */
+
+  /* Accent par défaut — surchargé par la vibe choisie (voir SearchForm) */
+  --color-accent: #ff5d73;
+  --color-on-accent: #14171f;
+
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-plex-sans);
+  /* Polices de l'aperçu logo */
+  --font-playfair: var(--font-nf-playfair), Georgia, serif;
+  --font-grotesk: var(--font-nf-grotesk), system-ui, sans-serif;
+  --font-syne: var(--font-nf-syne), system-ui, sans-serif;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+/* =============================================================================
+   Thèmes — appliqués via data-theme="..." sur <html> (posé par le serveur)
+   ============================================================================= */
+
+/* ── Sombre ─────────────────────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --color-paper: #0f1117;
+  --color-ink: #f0f2f8;
+  --color-muted: #a1a6af;
+  --color-border: #2a2d35;
+  --color-danger: #f87171;
+}
+
+/* ── Inversé : inversion EXACTE (255 - valeur) de chaque couleur du thème clair.
+      Les accents des vibes sont inversés de la même façon dans lib/theme.ts. ── */
+[data-theme="invert"] {
+  color-scheme: dark;
+  --color-paper: #050503;
+  --color-ink: #ebe8e0;
+  --color-muted: #b1aa9b;
+  --color-border: #1a1814;
+  --color-danger: #23d9d9;
+  --color-accent: #00a28c;
+  --color-on-accent: #14171f;
+}
+
+/* ── Personnalisé : fond / texte / texte secondaire / accent sont posés en
+      direct sur <html> (lib/theme.ts → customColorsCssVars). La bordure est
+      dérivée automatiquement du texte et du fond. ────────────────────────── */
+[data-theme="custom"] {
+  --color-border: color-mix(in oklab, var(--color-ink) 16%, var(--color-paper));
+}
+
+/* =============================================================================
+   Fond animé du site
+   Couleur de base du thème (blanc, noir, inversé, personnalisé) + un halo
+   centré teinté par la VIBE choisie, deux lueurs qui dérivent lentement et
+   une fine trame de points qui s'estompe vers les bords.
+   La teinte reste sous ~22 % : le texte secondaire garde un contraste ≥ 4,5:1.
+   ============================================================================= */
+
+/* --glow = couleur des halos. Déclarée comme vraie couleur pour pouvoir
+   s'animer en douceur quand on change de vibe (fondu de 0,9 s). */
+@property --glow {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #ff5d73;
+}
+
+:root {
+  --glow: var(--color-accent);
+  transition: --glow 0.9s ease;
+}
+
+.site-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Chaque calque utilise une couleur PURE et règle son intensité avec
+   `opacity` : compris par tous les navigateurs, sans conversion au build. */
+.site-bg > span {
+  position: absolute;
+}
+
+/* 1. Dégradé centré : la teinte de la vibe au centre, fondue vers la couleur
+      du thème sur les bords (plus foncé au centre en clair, plus lumineux en sombre) */
+.site-bg-glow {
+  inset: 0;
+  background: radial-gradient(ellipse 60% 45% at 50% 26%, var(--glow) 0%, transparent 70%);
+  opacity: 0.1;
+}
+
+/* Léger voile de la couleur du texte au centre, pour la profondeur */
+.site-bg-vignette {
+  inset: 0;
+  background: radial-gradient(ellipse 100% 75% at 50% 45%, var(--color-ink) 0%, transparent 72%);
+  opacity: 0.04;
+}
+
+/* 2. Trame de points, visible au centre et effacée vers les bords */
+.site-bg-dots {
+  inset: 0;
+  background-image: radial-gradient(var(--color-ink) 1px, transparent 1.5px);
+  background-size: 26px 26px;
+  opacity: 0.14;
+  mask-image: radial-gradient(ellipse 55% 45% at 50% 30%, #000 0%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 55% 45% at 50% 30%, #000 0%, transparent 75%);
+}
+
+/* 3. Deux lueurs qui dérivent lentement autour du centre */
+.site-bg-orb {
+  width: 55vmax;
+  height: 55vmax;
+  border-radius: 9999px;
+  filter: blur(60px);
+  will-change: transform;
+}
+
+.site-bg-orb--a {
+  top: -18vmax;
+  left: calc(50% - 45vmax);
+  background: radial-gradient(circle, var(--glow) 0%, transparent 65%);
+  opacity: 0.08;
+  animation: bg-drift-a 26s ease-in-out infinite alternate;
+}
+
+.site-bg-orb--b {
+  top: -8vmax;
+  left: calc(50% - 10vmax);
+  background: radial-gradient(circle, var(--glow) 0%, transparent 65%);
+  /* Même luminosité que la vibe, teinte décalée (navigateurs récents) */
+  background: radial-gradient(circle, oklch(from var(--glow) l c calc(h + 55)) 0%, transparent 65%);
+  opacity: 0.06;
+  animation: bg-drift-b 32s ease-in-out infinite alternate;
+}
+
+@keyframes bg-drift-a {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(18vmax, 10vmax) scale(1.15); }
+}
+
+@keyframes bg-drift-b {
+  from { transform: translate(0, 0) scale(1.1); }
+  to   { transform: translate(-16vmax, 14vmax) scale(0.95); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { transition: none; }
+  .site-bg-orb { animation: none; }
+}
+
+/* =============================================================================
+   RTL (arabe) — la direction est posée via dir="rtl" sur <html>
+   ============================================================================= */
+[dir="rtl"] {
+  text-align: right;
+}
+
+/* =============================================================================
+   Bouton "Générer" — le geste principal de la page
+   Dégradé tiré de l'accent de la vibe, halo lumineux, reflet au survol,
+   et une pulsation douce dès que le formulaire est prêt (texte saisi).
+   ============================================================================= */
+.generate-btn {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  min-width: min(100%, 18rem);
+  padding: 1.125rem 2.75rem;
+  border-radius: 9999px;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-on-accent);
+  /* Repli pour les navigateurs sans "relative color syntax" */
+  background: var(--color-accent);
+  /* Même luminosité que l'accent, teinte décalée → contraste du texte conservé */
+  background: linear-gradient(
+    120deg,
+    var(--color-accent) 0%,
+    oklch(from var(--color-accent) l c calc(h + 35)) 100%
+  );
+  box-shadow:
+    0 12px 32px -10px color-mix(in oklab, var(--color-accent) 75%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.3);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.generate-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    0 18px 44px -10px color-mix(in oklab, var(--color-accent) 90%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.35);
+}
+
+.generate-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+.generate-btn:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 4px;
+}
+
+.generate-btn:disabled {
+  cursor: progress;
+  opacity: 0.85;
+}
+
+/* Reflet qui balaie le bouton au survol */
+.generate-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 0.4) 50%, transparent 70%);
+  transform: translateX(-120%);
+}
+
+.generate-btn:hover:not(:disabled)::after {
+  animation: generate-shine 0.9s ease;
+}
+
+/* Pulsation douce : signale que tout est prêt, sans être agressive */
+.generate-btn[data-ready] {
+  animation: generate-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes generate-shine {
+  to {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes generate-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 12px 32px -10px color-mix(in oklab, var(--color-accent) 75%, transparent),
+      0 0 0 0 color-mix(in oklab, var(--color-accent) 45%, transparent);
+  }
+  60% {
+    box-shadow:
+      0 12px 32px -10px color-mix(in oklab, var(--color-accent) 75%, transparent),
+      0 0 0 14px color-mix(in oklab, var(--color-accent) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .generate-btn,
+  .generate-btn[data-ready],
+  .generate-btn::after {
+    animation: none !important;
+    transition: none;
+  }
+}
