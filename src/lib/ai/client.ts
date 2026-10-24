@@ -49,6 +49,15 @@ const pausedUntil = new Map<string, number>();
 
 const MAX_EXPLANATION_LENGTH = 300;
 
+/**
+ * Temps maximal accordé à chaque modèle. Un modèle très demandé peut rester
+ * muet sans renvoyer d'erreur : sans cette limite, la route dépassait les 60 s
+ * autorisées par Vercel avant d'essayer le modèle de secours. Pire cas pour
+ * 3 modèles : 15 + 15 + 25 = 55 s.
+ */
+const MODEL_TIMEOUT_MS = 15_000;
+const LAST_MODEL_TIMEOUT_MS = 25_000;
+
 export class NameGenerationError extends Error {
   constructor(message: string, public readonly cause?: unknown) {
     super(message);
@@ -89,6 +98,10 @@ function describeAiError(error: unknown, modelId: string): string {
     return `L'IA a répondu dans un format inattendu. Début de sa réponse : ${(error.text ?? "(vide)").slice(0, 300)}`;
   }
 
+  if (isTimeout(error)) {
+    return `Le modèle "${modelId}" n'a pas répondu à temps (souvent une forte demande chez Google).`;
+  }
+
   if (error instanceof Error) return `Erreur inattendue : ${error.name} — ${error.message}`;
   return "Erreur inattendue (détail inconnu).";
 }
@@ -120,6 +133,11 @@ export function cleanNames(names: GeneratedName[], max: number): GeneratedName[]
   return result;
 }
 
+/** Délai dépassé (limite `timeout` de l'appel). */
+function isTimeout(error: unknown): boolean {
+  return error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
+}
+
 /**
  * L'erreur justifie-t-elle d'essayer le modèle suivant ? Si oui, pendant
  * combien de temps mettre ce modèle de côté.
@@ -127,6 +145,7 @@ export function cleanNames(names: GeneratedName[], max: number): GeneratedName[]
 function pauseFor(error: unknown, modelId: string): number | null {
   const e = RetryError.isInstance(error) ? error.lastError : error;
   if (NoObjectGeneratedError.isInstance(e)) return 0; // format raté : un autre modèle peut réussir
+  if (isTimeout(e)) return 60_000; // modèle saturé qui ne répond plus : on le laisse souffler
   if (!APICallError.isInstance(e)) return null;
   const code = e.statusCode ?? 0;
   const body = (e.responseBody ?? "").toLowerCase();
@@ -137,7 +156,7 @@ function pauseFor(error: unknown, modelId: string): number | null {
   return null;
 }
 
-async function callModel(modelId: string, input: NamingInput, maxRetries: number): Promise<GeneratedName[]> {
+async function callModel(modelId: string, input: NamingInput, maxRetries: number, timeout: number): Promise<GeneratedName[]> {
   const { object } = await generateObject({
     model: google(modelId),
     schema: generationResponseSchema,
@@ -145,6 +164,8 @@ async function callModel(modelId: string, input: NamingInput, maxRetries: number
     prompt: buildNamingPrompt(input),
     temperature: 0.9,
     maxRetries,
+    // generateObject n'a pas d'option `timeout` : même effet avec un signal d'abandon
+    abortSignal: AbortSignal.timeout(timeout),
   });
   return cleanNames(object.names, input.count);
 }
@@ -159,11 +180,12 @@ function fail(modelId: string, reason: string, cause?: unknown, label = "la gén
  * (surcharge, quota épuisé, modèle inaccessible → modèle suivant).
  * La tâche renvoie null si la réponse est inexploitable (on essaie alors le
  * modèle suivant). Partagé par la génération de noms et l'analyse d'un nom.
+ * La tâche DOIT transmettre `timeout` à l'appel IA (option `timeout` du SDK).
  *
  * @throws {NameGenerationError} si aucun modèle n'a pu répondre
  */
 export async function runWithModelChain<T>(
-  task: (modelId: string, maxRetries: number) => Promise<T | null>,
+  task: (modelId: string, maxRetries: number, timeout: number) => Promise<T | null>,
   label: string
 ): Promise<T> {
   const now = Date.now();
@@ -181,7 +203,7 @@ export async function runWithModelChain<T>(
     try {
       // Un seul appel par modèle (passer au suivant est plus rapide que
       // réessayer le même) ; une nouvelle tentative pour le dernier recours.
-      const result = await task(modelId, isLast ? 1 : 0);
+      const result = await task(modelId, isLast ? 1 : 0, isLast ? LAST_MODEL_TIMEOUT_MS : MODEL_TIMEOUT_MS);
       if (result !== null) {
         if (i > 0) console.info(`[IA] ${label} réussie avec le modèle de secours ${modelId}.`);
         return result;
@@ -210,8 +232,8 @@ export async function runWithModelChain<T>(
  * @throws {NameGenerationError} si aucun modèle n'a pu répondre
  */
 export async function generateNames(input: NamingInput): Promise<GeneratedName[]> {
-  return runWithModelChain(async (modelId, maxRetries) => {
-    const names = await callModel(modelId, input, maxRetries);
+  return runWithModelChain(async (modelId, maxRetries, timeout) => {
+    const names = await callModel(modelId, input, maxRetries, timeout);
     return names.length > 0 ? names : null;
   }, "la génération");
 }

@@ -8,8 +8,14 @@
 /** Générations gratuites par jour et par IP. */
 export const FREE_GENERATIONS_PER_DAY = 3;
 
-/** Analyses « Qu'évoque ce nom ? » gratuites par jour et par IP (recherche Google + IA). */
+/** Analyses « Qu'évoque ce nom ? » gratuites par jour et par IP (recherche sur le web + IA). */
 export const FREE_INSIGHTS_PER_DAY = 5;
+
+/**
+ * Recherches de concurrence gratuites par jour et par IP. Pas d'IA, mais
+ * chaque recherche interroge 5 sites publics : la limite les protège d'un abus.
+ */
+export const FREE_SEARCHES_PER_DAY = 20;
 
 /** Noms proposés à chaque génération. */
 export const NAMES_PER_GENERATION = 10;

@@ -1,6 +1,7 @@
 import { paymentsStatus } from "@/lib/stripe";
 import { hasPersistentStore } from "@/lib/redis";
 import { turnstileEnabled } from "@/lib/turnstile";
+import { googleGroundingEnabled } from "@/lib/ai/insight";
 import type { ActiveServices } from "@/lib/legal-content";
 
 // Services réellement actifs selon les clés configurées : les pages légales
@@ -11,5 +12,6 @@ export function activeServices(): ActiveServices {
     emails: !!process.env.RESEND_API_KEY?.trim(),
     sharedStore: hasPersistentStore,
     antiBot: turnstileEnabled(),
+    googleSearch: googleGroundingEnabled(),
   };
 }

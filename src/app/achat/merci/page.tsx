@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { PendingLink } from "@/components/ui/Spinner";
 import { cookies } from "next/headers";
 import { CircleCheck, Clock, TriangleAlert } from "lucide-react";
 import { SITE_NAME, TRANSLATIONS } from "@/lib/i18n";
@@ -44,12 +44,13 @@ export default async function ThanksPage({ searchParams }: PageProps<"/achat/mer
       {balance !== null && status === "ok" && (
         <p className="mt-6 rounded-full bg-accent/10 px-5 py-2 font-semibold text-ink">{t.creditsBalance(balance)}</p>
       )}
-      <Link
+      <PendingLink
         href="/"
-        className="mt-10 rounded-full bg-accent px-8 py-3.5 font-bold text-on-accent transition hover:brightness-95"
+        spinnerAt="start"
+        className="mt-10 inline-flex items-center gap-2 rounded-full bg-accent px-8 py-3.5 font-bold text-on-accent transition hover:brightness-95"
       >
         {t.backToGenerator}
-      </Link>
+      </PendingLink>
     </main>
   );
 }

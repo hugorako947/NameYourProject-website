@@ -33,8 +33,8 @@ export const CATEGORIES: Category[] = [
   "Other",
 ];
 
-/** Longueur max du champ "Précisez" de la catégorie Autre. */
-export const MAX_CUSTOM_CATEGORY_LENGTH = 60;
+/** Longueur max du champ "Précisez" de la catégorie Autre (assez pour une phrase). */
+export const MAX_CUSTOM_CATEGORY_LENGTH = 200;
 
 /** Longueur max de la description du projet. */
 export const MAX_KEYWORDS_LENGTH = 300;
@@ -90,6 +90,8 @@ export type ApiErrorCode =
   | "CODE_RATE_LIMITED"
   | "INSIGHT_LIMITED"
   | "INSIGHT_FAILED"
+  | "SEARCH_LIMITED"
+  | "SEARCH_FAILED"
   | "BOT_CHECK_FAILED"
   | "GENERIC";
 
@@ -188,7 +190,7 @@ export interface CheckoutResponse {
   url: string;
 }
 
-// ─── Analyse « Qu'évoque ce nom ? » (recherche Google + IA) ──────────────────
+// ─── Analyse « Qu'évoque ce nom ? » (recherche sur le web + IA) ──────────────
 /** FREE = semble libre · IN_USE = déjà utilisé · ASSOCIATED = fortement associé à un univers */
 export type InsightVerdict = "FREE" | "IN_USE" | "ASSOCIATED" | "UNKNOWN";
 
@@ -214,6 +216,47 @@ export interface NameInsightRequest {
 export interface NameInsightResponse {
   insight: NameInsight;
   /** Analyses gratuites restantes aujourd'hui */
+  remaining: number;
+  limit: number;
+  unlimited: boolean;
+}
+
+// ─── Recherche de concurrence (sources publiques gratuites, sans clé) ────────
+/** Sources interrogées, dans l'ordre d'affichage (voir lib/web-search.ts). */
+export const WEB_SOURCES = ["wikipedia", "github", "appstore", "steam", "hackernews"] as const;
+export type WebSourceId = (typeof WEB_SOURCES)[number];
+
+/** Longueur max de la recherche (un nom ou une courte description). */
+export const MAX_SEARCH_QUERY_LENGTH = 100;
+
+export interface WebHit {
+  title: string;
+  url: string;
+  description: string | null;
+  /** Indicateur de popularité propre à la source (étoiles, avis, points), sinon null */
+  metric: number | null;
+  /** true si le titre correspond exactement à la recherche */
+  exact: boolean;
+}
+
+export interface WebSourceResult {
+  source: WebSourceId;
+  /** false si la source n'a pas répondu (panne, limite) : à signaler, pas à confondre avec « rien trouvé » */
+  ok: boolean;
+  /** Nombre total de résultats annoncé par la source */
+  total: number;
+  hits: WebHit[];
+}
+
+export interface CompetitorsRequest {
+  query: string;
+  lang: Lang;
+}
+
+export interface CompetitorsResponse {
+  query: string;
+  sources: WebSourceResult[];
+  /** Recherches gratuites restantes aujourd'hui */
   remaining: number;
   limit: number;
   unlimited: boolean;

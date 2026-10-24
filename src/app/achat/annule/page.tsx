@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { PendingLink } from "@/components/ui/Spinner";
 import { CircleX } from "lucide-react";
 import { SITE_NAME, TRANSLATIONS } from "@/lib/i18n";
 import { getRequestPrefs } from "@/lib/request-prefs";
@@ -16,12 +16,13 @@ export default async function CancelPage() {
       <CircleX aria-hidden className="h-14 w-14 text-muted" />
       <h1 className="mt-6 font-display text-4xl font-bold text-ink">{t.cancelTitle}</h1>
       <p className="mt-4 text-lg leading-relaxed text-muted">{t.cancelText}</p>
-      <Link
+      <PendingLink
         href="/"
-        className="mt-10 rounded-full bg-accent px-8 py-3.5 font-bold text-on-accent transition hover:brightness-95"
+        spinnerAt="start"
+        className="mt-10 inline-flex items-center gap-2 rounded-full bg-accent px-8 py-3.5 font-bold text-on-accent transition hover:brightness-95"
       >
         {t.backToGenerator}
-      </Link>
+      </PendingLink>
     </main>
   );
 }

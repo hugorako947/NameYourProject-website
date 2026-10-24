@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { PendingLink } from "./ui/Spinner";
 import { useApp } from "@/lib/app-context";
 import { decodeShare, loadFavorites, saveFavorites, MAX_FAVORITES } from "@/lib/favorites";
 import { applyDomainResult, verifyPendingDomains } from "@/lib/domains/client-check";
@@ -59,9 +59,13 @@ export function SharedFavorites() {
   }
 
   const cta = (
-    <Link href="/" className="rounded-full bg-accent px-6 py-3 font-bold text-on-accent transition hover:brightness-95">
+    <PendingLink
+      href="/"
+      spinnerAt="start"
+      className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 font-bold text-on-accent transition hover:brightness-95"
+    >
       {t.sharedCta}
-    </Link>
+    </PendingLink>
   );
 
   if (invalid) {

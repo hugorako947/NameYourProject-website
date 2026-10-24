@@ -1,7 +1,8 @@
 "use client";
 
 // =============================================================================
-// NameYourProject — Boutons Thème + Langue (centrés en haut de la page)
+// NameYourProject — En-tête : liens Concurrence + Installer l'appli, puis
+// boutons Thème + Langue (centrés en haut de la page)
 //
 // Chaque bouton ouvre un menu flottant. Fermeture : clic à l'extérieur,
 // touche Échap, ou choix d'une option (sauf "Personnalisé", qui reste ouvert
@@ -9,8 +10,9 @@
 // =============================================================================
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Check, ChevronDown, RotateCcw } from "lucide-react";
+import { Check, ChevronDown, Download, RotateCcw, Users } from "lucide-react";
 import { useApp } from "@/lib/app-context";
+import { PendingLink, Spinner } from "./ui/Spinner";
 import { LANGUAGES } from "@/lib/i18n";
 import { CUSTOM_COLOR_KEYS, THEME_IDS } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -141,14 +143,14 @@ function ThemePicker() {
 // ─── Langue ──────────────────────────────────────────────────────────────────
 
 function LangPicker() {
-  const { t, lang, setLang } = useApp();
+  const { t, lang, setLang, langPending } = useApp();
   const current = LANGUAGES.find((l) => l.code === lang) ?? LANGUAGES[0];
 
   return (
     <Dropdown
       label={
         <>
-          <span aria-hidden>{current.flag}</span>
+          {langPending ? <Spinner className="h-3.5 w-3.5" /> : <span aria-hidden>{current.flag}</span>}
           <span>{t.langLabel}</span>
         </>
       }
@@ -174,9 +176,21 @@ function LangPicker() {
   );
 }
 
+const navLinkClass = cn(
+  "inline-flex items-center gap-1.5 rounded-full border border-muted/60 px-4 py-1.5 text-sm font-medium text-muted transition-colors hover:border-ink hover:text-ink",
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+);
+
 export function HeaderControls() {
+  const { t } = useApp();
   return (
-    <div className="flex items-center justify-center gap-2">
+    <div className="flex flex-wrap items-center justify-center gap-2">
+      <PendingLink href="/concurrence" className={navLinkClass} icon={<Users aria-hidden className="h-3.5 w-3.5" />}>
+        {t.checkCompetitors}
+      </PendingLink>
+      <PendingLink href="/installer" className={navLinkClass} icon={<Download aria-hidden className="h-3.5 w-3.5" />}>
+        {t.installNav}
+      </PendingLink>
       <ThemePicker />
       <LangPicker />
     </div>

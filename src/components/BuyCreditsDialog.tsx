@@ -15,6 +15,7 @@ import {
   type PackId,
 } from "@/lib/pricing";
 import type { ApiErrorBody, CheckoutRequest, CheckoutResponse } from "@/types";
+import { Spinner } from "./ui/Spinner";
 
 // =============================================================================
 // Fenêtre d'achat de générations — 3 packs dégressifs (voir lib/pricing.ts)
@@ -210,12 +211,13 @@ function DialogContent({ onClose, paymentsEnabled }: { onClose: () => void; paym
         type="button"
         onClick={handlePay}
         disabled={!paymentsEnabled || status === "loading" || !consent}
-        className="mt-6 w-full rounded-full bg-accent py-3.5 text-base font-bold text-on-accent transition hover:brightness-95 disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        aria-busy={status === "loading"}
+        className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-accent py-3.5 text-base font-bold text-on-accent transition hover:brightness-95 disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         {!paymentsEnabled
           ? t.errors.PAYMENT_NOT_CONFIGURED
           : status === "loading"
-            ? t.buyRedirecting
+            ? <><Spinner className="h-5 w-5" />{t.buyRedirecting}</>
             : t.buyPayBtn(formatUsd(selectedPack.priceUsd, locale))}
       </button>
     </div>

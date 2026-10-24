@@ -1,6 +1,5 @@
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import type { LegalDoc, LegalLang } from "@/lib/legal-content";
+import { BackLink } from "./BackLink";
 import { LEGAL } from "@/lib/legal";
 
 // =============================================================================
@@ -23,10 +22,7 @@ export function LegalPage({ doc, lang, backLabel, notice }: LegalPageProps) {
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12 sm:px-10">
-      <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-ink">
-        <ArrowLeft aria-hidden className="h-4 w-4 rtl:rotate-180" />
-        {backLabel}
-      </Link>
+      <BackLink label={backLabel} />
 
       {notice && <p className="mt-6 rounded-lg bg-accent/10 p-3 text-sm text-ink">{notice}</p>}
 

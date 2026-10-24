@@ -6,6 +6,7 @@ import { AppProvider } from "@/lib/app-context";
 import { HeaderControls } from "@/components/HeaderControls";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteBackground } from "@/components/SiteBackground";
+import { PwaSetup } from "@/components/PwaSetup";
 import { SITE_NAME, TRANSLATIONS, getLangMeta } from "@/lib/i18n";
 import { getRequestPrefs } from "@/lib/request-prefs";
 import { colorSchemeFor, customColorsCssVars } from "@/lib/theme";
@@ -34,7 +35,13 @@ const plexSans = IBM_Plex_Sans({
 export async function generateMetadata(): Promise<Metadata> {
   const { lang } = await getRequestPrefs();
   const t = TRANSLATIONS[lang];
-  return { metadataBase: new URL(siteUrl()), title: SITE_NAME, description: t.metaDescription };
+  return {
+    metadataBase: new URL(siteUrl()),
+    title: SITE_NAME,
+    description: t.metaDescription,
+    // iPhone / iPad : nom et style de l'application ajoutée à l'écran d'accueil
+    appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: "default" },
+  };
 }
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
@@ -58,6 +65,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="flex min-h-full flex-col font-sans antialiased">
         <SiteBackground />
+        <PwaSetup />
         <AppProvider
           initialTheme={prefs.theme}
           initialCustomColors={prefs.customColors}

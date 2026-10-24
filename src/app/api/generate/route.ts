@@ -28,7 +28,6 @@
 
 import {
   CATEGORIES,
-  MAX_CUSTOM_CATEGORY_LENGTH,
   MAX_KEYWORDS_LENGTH,
   NAME_LENGTHS,
   NAME_STYLES,
@@ -44,7 +43,7 @@ import { isLang } from "@/lib/i18n";
 import { getAdminState } from "@/lib/admin";
 import { turnstileEnabled, verifyTurnstileToken } from "@/lib/turnstile";
 import { generateNames, NameGenerationError } from "@/lib/ai/client";
-import type { NamingInput } from "@/lib/ai/prompts";
+import { cleanCustomCategory, type NamingInput } from "@/lib/ai/prompts";
 import { DAILY_LIMIT, checkRateLimit, getClientIp, refundRateLimit } from "@/lib/ratelimit";
 import { checkDomainsBatch } from "@/lib/domains/checker";
 import { buildAffiliateUrl } from "@/lib/domains/affiliate";
@@ -87,13 +86,6 @@ function cleanInspiration(value: unknown): { nom: string; explication: string } 
   if (typeof nom !== "string" || !/^[A-Za-z0-9]{2,40}$/.test(nom)) return null;
   const text = typeof explication === "string" ? explication.replace(/\s+/g, " ").trim().slice(0, 300) : "";
   return { nom, explication: text };
-}
-
-/** Nettoie la précision "Autre" : une seule ligne, espaces compactés, longueur bornée. */
-function cleanCustomCategory(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const cleaned = value.replace(/\s+/g, " ").trim().slice(0, MAX_CUSTOM_CATEGORY_LENGTH);
-  return cleaned.length > 0 ? cleaned : null;
 }
 
 interface Candidate extends GeneratedName {

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import { SearchForm } from "@/components/SearchForm";
+import { PendingLink } from "@/components/ui/Spinner";
 import { SEO_PAGES, getSeoPage, seoPath } from "@/lib/seo/pages";
 import { SITE_NAME } from "@/lib/i18n";
 import { siteUrl } from "@/lib/site";
@@ -57,13 +57,13 @@ export default async function SeoGeneratorPage({ params }: PageProps<"/generateu
       <nav aria-label="Fil d'Ariane">
         <ol className="flex flex-wrap items-center gap-1.5 text-sm">
           <li>
-            <Link
+            <PendingLink
               href="/"
+              icon={<ArrowLeft aria-hidden className="h-4 w-4 rtl:rotate-180" />}
               className="inline-flex items-center gap-1.5 rounded-full py-1 font-semibold text-ink/80 transition-colors hover:text-ink"
             >
-              <ArrowLeft aria-hidden className="h-4 w-4 rtl:rotate-180" />
               {SITE_NAME}
-            </Link>
+            </PendingLink>
           </li>
           <li aria-hidden className="text-muted">
             <ChevronRight className="h-4 w-4 rtl:rotate-180" />
@@ -99,16 +99,19 @@ export default async function SeoGeneratorPage({ params }: PageProps<"/generateu
         <h2 className="font-display text-xl font-bold text-ink">Autres générateurs de noms</h2>
         <ul className="mt-3 flex flex-wrap gap-2">
           <li>
-            <Link href="/" className={`${pill} items-center gap-1.5 border-accent/70 font-semibold text-ink hover:border-accent`}>
-              <ArrowLeft aria-hidden className="h-4 w-4 rtl:rotate-180" />
+            <PendingLink
+              href="/"
+              icon={<ArrowLeft aria-hidden className="h-4 w-4 rtl:rotate-180" />}
+              className={`${pill} items-center gap-1.5 border-accent/70 font-semibold text-ink hover:border-accent`}
+            >
               Générateur principal
-            </Link>
+            </PendingLink>
           </li>
           {SEO_PAGES.filter((p) => p.slug !== page.slug).map((p) => (
             <li key={p.slug}>
-              <Link href={seoPath(p.slug)} className={pill}>
+              <PendingLink href={seoPath(p.slug)} className={`${pill} items-center gap-1.5`}>
                 {p.menuLabel}
-              </Link>
+              </PendingLink>
             </li>
           ))}
         </ul>

@@ -3,6 +3,7 @@
 import { Coins, Infinity as InfinityIcon, Plus } from "lucide-react";
 import { useApp } from "@/lib/app-context";
 import { cn } from "@/lib/utils";
+import { Spinner, usePendingAction } from "./ui/Spinner";
 
 // =============================================================================
 // Compteur de générations, au-dessus du champ de description :
@@ -26,16 +27,18 @@ interface QuotaBarProps {
   paymentsEnabled: boolean;
   onBuy: () => void;
   onRestore: () => void;
-  onSignOut: () => void;
-  onAdminToggle: (unlimited: boolean) => void;
+  onSignOut: () => Promise<void> | void;
+  onAdminToggle: (unlimited: boolean) => Promise<void> | void;
 }
 
 const linkClass =
-  "text-xs font-medium text-muted underline decoration-muted/40 underline-offset-4 transition-colors hover:text-ink hover:decoration-ink";
+  "inline-flex items-center gap-1 text-xs font-medium text-muted underline decoration-muted/40 underline-offset-4 transition-colors hover:text-ink hover:decoration-ink";
 
 export function QuotaBar(props: QuotaBarProps) {
   const { remaining, limit, unlimited, isAdmin, credits, creditsEmail, paymentsEnabled } = props;
   const { t } = useApp();
+  const [signingOut, signOut] = usePendingAction(props.onSignOut);
+  const [switching, toggleAdmin] = usePendingAction(props.onAdminToggle);
 
   if (unlimited) {
     return (
@@ -47,7 +50,8 @@ export function QuotaBar(props: QuotaBarProps) {
           <InfinityIcon aria-hidden className="h-4 w-4 text-accent" />
           {t.quotaUnlimited}
         </div>
-        <button type="button" onClick={() => props.onAdminToggle(false)} className={linkClass}>
+        <button type="button" onClick={() => toggleAdmin(false)} disabled={switching} className={linkClass}>
+          {switching && <Spinner className="h-3 w-3" />}
           {t.adminToVisitor}
         </button>
       </div>
@@ -109,7 +113,8 @@ export function QuotaBar(props: QuotaBarProps) {
       {credits !== null && creditsEmail ? (
         <p className="text-xs text-muted">
           {t.creditsLinkedTo(creditsEmail)} ·{" "}
-          <button type="button" onClick={props.onSignOut} className={linkClass}>
+          <button type="button" onClick={() => signOut()} disabled={signingOut} className={linkClass}>
+            {signingOut && <Spinner className="h-3 w-3" />}
             {t.creditsSignOut}
           </button>
         </p>
@@ -124,7 +129,8 @@ export function QuotaBar(props: QuotaBarProps) {
       {isAdmin && (
         <p className="text-xs text-muted">
           {t.adminVisitorNotice} ·{" "}
-          <button type="button" onClick={() => props.onAdminToggle(true)} className={linkClass}>
+          <button type="button" onClick={() => toggleAdmin(true)} disabled={switching} className={linkClass}>
+            {switching && <Spinner className="h-3 w-3" />}
             {t.adminToUnlimited}
           </button>
         </p>

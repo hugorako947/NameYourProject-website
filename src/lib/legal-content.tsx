@@ -25,6 +25,8 @@ export interface ActiveServices {
   emails: boolean;
   sharedStore: boolean;
   antiBot: boolean;
+  /** « Qu'évoque ce nom ? » utilise la recherche Google de Gemini (GEMINI_SEARCH_GROUNDING) */
+  googleSearch: boolean;
 }
 
 export interface LegalSection {
@@ -75,7 +77,8 @@ function providers(lang: LegalLang, s: ActiveServices): string {
   const h = loc(host.name, lang) || (lang === "fr" ? "[À compléter]" : "[To be completed]");
   const fr = [
     `l'hébergeur (${h})`,
-    "Google (IA Gemini et recherche Google)",
+    s.googleSearch ? "Google (IA Gemini et recherche Google)" : "Google (IA Gemini)",
+    "les sites publics interrogés pour les recherches (Wikipédia, GitHub, Apple App Store, Steam, Hacker News)",
     "les registres de noms de domaine",
     s.payments && "le prestataire de paiement Stripe",
     s.payments && s.emails && "le service d'envoi d'e-mails Resend",
@@ -84,7 +87,8 @@ function providers(lang: LegalLang, s: ActiveServices): string {
   ];
   const en = [
     `the hosting provider (${h})`,
-    "Google (Gemini AI and Google Search)",
+    s.googleSearch ? "Google (Gemini AI and Google Search)" : "Google (Gemini AI)",
+    "the public sites queried for searches (Wikipedia, GitHub, Apple App Store, Steam, Hacker News)",
     "domain name registries",
     s.payments && "the payment provider Stripe",
     s.payments && s.emails && "the email provider Resend",
@@ -647,8 +651,17 @@ export function privacyPolicy(lang: LegalLang, services: ActiveServices): LegalD
               </li>
               <li>
                 <strong className="text-ink">Noms analysés</strong> : lorsque vous cliquez sur « Qu&apos;évoque ce nom ? »,
-                le nom (et lui seul) est envoyé à Google, qui le recherche sur le web et en résume les résultats avec son
-                IA Gemini. Le résultat est conservé 24 heures pour éviter de refaire la même recherche.
+                le nom (et lui seul) est recherché par notre serveur sur des sites publics (Wikipédia, GitHub, l&apos;App Store d&apos;Apple, Steam et Hacker News), puis
+                les résultats sont résumés par l&apos;IA Gemini de Google
+                {services.googleSearch && <>, qui peut aussi rechercher le nom sur Google</>}. Le résultat est conservé
+                24 heures pour éviter de refaire la même recherche.
+              </li>
+              <li>
+                <strong className="text-ink">Recherches de concurrence</strong> : le nom ou la description saisi dans la
+                page « Concurrence » est recherché par notre serveur sur ces mêmes sites publics. Votre adresse IP ne
+                leur est pas transmise et ce texte n&apos;est pas envoyé à une IA. Les résultats sont conservés 24 heures,
+                associés à une empreinte non réversible de la recherche, pour ne pas refaire la même recherche.
+                N&apos;y saisissez pas d&apos;informations personnelles ou confidentielles.
               </li>
               <li>
                 <strong className="text-ink">Noms de domaine vérifiés</strong> : envoyés aux registres officiels
@@ -663,6 +676,12 @@ export function privacyPolicy(lang: LegalLang, services: ActiveServices): LegalD
                 <strong className="text-ink">Favoris</strong> : enregistrés uniquement dans votre navigateur
                 (stockage local). Ils ne sont jamais envoyés à nos serveurs et disparaissent si vous effacez les
                 données de navigation.
+              </li>
+              <li>
+                <strong className="text-ink">Application installée</strong> : si vous installez le site comme une
+                application, votre navigateur garde en mémoire certains fichiers du site (mise en page, icônes, page
+                « hors ligne ») pour qu&apos;il s&apos;ouvre plus vite. Ces fichiers ne contiennent aucune donnée
+                personnelle ; vous les supprimez en désinstallant l&apos;application ou en effaçant les données du site.
               </li>
               {services.payments ? (
                 <>
@@ -714,7 +733,7 @@ export function privacyPolicy(lang: LegalLang, services: ActiveServices): LegalD
           title: "Transferts hors de l'Union européenne",
           body: (
             <P>
-              Certains prestataires, notamment Google et l&apos;hébergeur, peuvent traiter des données hors de
+              Certains prestataires, notamment Google, les sites publics interrogés et l&apos;hébergeur, peuvent traiter des données hors de
               l&apos;Union européenne, en particulier aux États-Unis. Ces transferts sont encadrés par les garanties
               prévues par le RGPD (décision d&apos;adéquation ou clauses contractuelles types de la Commission
               européenne).
@@ -778,8 +797,17 @@ export function privacyPolicy(lang: LegalLang, services: ActiveServices): LegalD
             </li>
             <li>
               <strong className="text-ink">Analysed names</strong>: when you click &quot;What does this name
-              evoke?&quot;, the name (and nothing else) is sent to Google, which searches for it on the web and
-              summarises the results with its Gemini AI. The result is kept for 24 hours to avoid repeating the search.
+              evoke?&quot;, the name (and nothing else) is searched by our server on public sites (Wikipedia, GitHub, Apple&apos;s App Store, Steam and Hacker News),
+              then the results are summarised by Google&apos;s Gemini AI
+              {services.googleSearch && <>, which may also search for the name on Google</>}. The result is kept for 24
+              hours to avoid repeating the search.
+            </li>
+            <li>
+              <strong className="text-ink">Competitor searches</strong>: the name or description entered on the
+              &quot;Competitors&quot; page is searched by our server on these same public sites. Your IP address is not
+              sent to them and this text is not sent to any AI. Results are kept for 24 hours, linked to a
+              non-reversible fingerprint of the search, to avoid repeating it. Do not enter personal or confidential
+              information.
             </li>
             <li>
               <strong className="text-ink">Checked domain names</strong>: sent to the official registries (Verisign
@@ -792,6 +820,11 @@ export function privacyPolicy(lang: LegalLang, services: ActiveServices): LegalD
             <li>
               <strong className="text-ink">Favorites</strong>: stored only in your browser (local storage). They are
               never sent to our servers and are deleted if you clear your browsing data.
+            </li>
+            <li>
+              <strong className="text-ink">Installed app</strong>: if you install the site as an app, your browser keeps
+              some of the site&apos;s files (layout, icons, &quot;offline&quot; page) so that it opens faster. These files
+              contain no personal data; you remove them by uninstalling the app or clearing the site&apos;s data.
             </li>
             {services.payments ? (
               <>
@@ -842,7 +875,7 @@ export function privacyPolicy(lang: LegalLang, services: ActiveServices): LegalD
         title: "Transfers outside the European Union",
         body: (
           <P>
-            Some providers, including Google and the hosting provider, may process data outside the European Union,
+            Some providers, including Google, the public sites queried and the hosting provider, may process data outside the European Union,
             in particular in the United States. These transfers are covered by the safeguards provided by the GDPR
             (adequacy decision or European Commission standard contractual clauses).
           </P>

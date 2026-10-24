@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ShieldCheck } from "lucide-react";
 import { ADMIN_COOKIE, isAdminCookie } from "@/lib/admin";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 
 // =============================================================================
 // NameYourProject — Page /admin (réservée au créateur du site)
@@ -43,9 +44,9 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
                 Aller au site
               </a>
               <form method="post" action="/api/admin/lock">
-                <button type="submit" className="w-full rounded-full border border-muted/60 py-3 font-semibold text-ink transition hover:border-ink">
+                <SubmitButton className="w-full rounded-full border border-muted/60 py-3 font-semibold text-ink transition hover:border-ink">
                   Déconnecter complètement ce navigateur
-                </button>
+                </SubmitButton>
               </form>
             </div>
           </>
@@ -69,9 +70,9 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
                 Secret incorrect, ou ADMIN_BYPASS_SECRET absent du fichier .env.local.
               </p>
             )}
-            <button type="submit" className={button}>
+            <SubmitButton className={button}>
               Activer l&apos;accès illimité
-            </button>
+            </SubmitButton>
           </form>
         )}
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
-import { CircleCheck, Copy, Download, Heart, Info, Share2, Sparkles } from "lucide-react";
+import { CircleCheck, Copy, Download, Heart, Info, Share2, Sparkles, type LucideIcon } from "lucide-react";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import {
   CATEGORIES,
@@ -48,6 +48,7 @@ import { QuotaBar } from "./QuotaBar";
 import { BuyCreditsDialog } from "./BuyCreditsDialog";
 import { FavoritesCompare } from "./FavoritesCompare";
 import { RestoreCreditsDialog } from "./RestoreCreditsDialog";
+import { Spinner, usePendingAction } from "./ui/Spinner";
 
 interface SearchFormProps {
   initialKeywords?: string;
@@ -476,16 +477,22 @@ export function SearchForm({
               <label htmlFor="custom-category" className="text-sm font-medium text-ink">
                 {t.otherLabel}
               </label>
-              <input
+              {/* Zone sur deux lignes : la précision peut être une vraie phrase.
+                  Les retours à la ligne sont remplacés par des espaces côté serveur. */}
+              <textarea
                 id="custom-category"
-                type="text"
+                rows={2}
                 value={customCategory}
                 onChange={(e) => setCustomCategory(e.target.value)}
                 disabled={isLoading}
                 maxLength={MAX_CUSTOM_CATEGORY_LENGTH}
                 placeholder={t.otherPlaceholder}
-                className="w-full rounded-lg border border-muted/60 bg-paper p-3 text-sm text-ink placeholder:text-muted/70 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50"
+                aria-describedby="custom-category-count"
+                className="w-full resize-none rounded-lg border border-muted/60 bg-paper p-3 text-sm text-ink placeholder:text-muted/70 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50"
               />
+              <p id="custom-category-count" dir="ltr" className="text-end text-xs tabular-nums text-muted">
+                {customCategory.length}/{MAX_CUSTOM_CATEGORY_LENGTH}
+              </p>
             </div>
           )}
         </div>
@@ -683,16 +690,8 @@ export function SearchForm({
                   { icon: Copy, label: t.favCopy, action: copyFavorites },
                   { icon: Download, label: t.favDownload, action: downloadFavorites },
                   { icon: Share2, label: t.favShare, action: shareFavorites },
-                ].map(({ icon: Icon, label, action }) => (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={action}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-muted/50 px-3.5 py-1.5 text-sm font-medium text-ink/80 transition-colors hover:border-ink hover:text-ink"
-                  >
-                    <Icon aria-hidden className="h-4 w-4" />
-                    {label}
-                  </button>
+                ].map(({ icon, label, action }) => (
+                  <FavoriteAction key={label} icon={icon} label={label} action={action} />
                 ))}
               </div>
               {favNotice && (
@@ -725,5 +724,22 @@ export function SearchForm({
         </div>
       )}
     </div>
+  );
+}
+
+/** Action sur les favoris : le cercle de chargement remplace l'icône tant qu'elle tourne. */
+function FavoriteAction({ icon: Icon, label, action }: { icon: LucideIcon; label: string; action: () => unknown }) {
+  const [pending, run] = usePendingAction(action);
+  return (
+    <button
+      type="button"
+      onClick={() => run()}
+      disabled={pending}
+      aria-busy={pending}
+      className="inline-flex items-center gap-1.5 rounded-full border border-muted/50 px-3.5 py-1.5 text-sm font-medium text-ink/80 transition-colors hover:border-ink hover:text-ink disabled:opacity-70"
+    >
+      {pending ? <Spinner /> : <Icon aria-hidden className="h-4 w-4" />}
+      {label}
+    </button>
   );
 }

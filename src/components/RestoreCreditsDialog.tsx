@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { X } from "lucide-react";
 import { useApp } from "@/lib/app-context";
 import type { ApiErrorBody, ApiErrorCode, RequestCodeRequest, VerifyCodeRequest } from "@/types";
+import { Spinner } from "./ui/Spinner";
 
 // =============================================================================
 // Fenêtre « Retrouver mes générations » — sans compte ni mot de passe :
@@ -97,7 +98,7 @@ function RestoreContent({ onClose, onRestored }: { onClose: () => void; onRestor
   const input =
     "w-full rounded-lg border border-muted/60 bg-paper p-3 text-ink placeholder:text-muted/70 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
   const primary =
-    "w-full rounded-full bg-accent py-3 font-bold text-on-accent transition hover:brightness-95 disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+    "inline-flex w-full items-center justify-center gap-2 rounded-full bg-accent py-3 font-bold text-on-accent transition hover:brightness-95 disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
   return (
     <div className="p-6">
@@ -130,7 +131,8 @@ function RestoreContent({ onClose, onRestored }: { onClose: () => void; onRestor
             />
           </label>
           {error && <p role="alert" className="text-sm font-medium text-danger">{t.errors[error]}</p>}
-          <button type="submit" disabled={loading} className={primary}>
+          <button type="submit" disabled={loading} aria-busy={loading} className={primary}>
+            {loading && <Spinner className="h-5 w-5" />}
             {t.sendCodeBtn}
           </button>
         </form>
@@ -153,7 +155,8 @@ function RestoreContent({ onClose, onRestored }: { onClose: () => void; onRestor
             />
           </label>
           {error && <p role="alert" className="text-sm font-medium text-danger">{t.errors[error]}</p>}
-          <button type="submit" disabled={loading || code.length !== 6} className={primary}>
+          <button type="submit" disabled={loading || code.length !== 6} aria-busy={loading} className={primary}>
+            {loading && <Spinner className="h-5 w-5" />}
             {t.verifyBtn}
           </button>
           <button

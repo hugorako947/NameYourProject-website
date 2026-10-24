@@ -1,4 +1,4 @@
-import type { Category, NameLength, NameStyle, Vibe } from "@/types";
+import { MAX_CUSTOM_CATEGORY_LENGTH, type Category, type NameLength, type NameStyle, type Vibe } from "@/types";
 import type { Lang } from "@/lib/i18n";
 
 // =============================================================================
@@ -21,6 +21,17 @@ Contraintes strictes :
 7. Interdiction des clichés tech : aucun nom finissant par -ify ou -ly, aucun nom commençant par Smart ou Pro.
 8. Privilégie les associations d'idées, les mots-valises et les métaphores plutôt que les descriptions littérales.
 9. Adapte le registre au type de projet, à la catégorie et à la vibe.`;
+
+/**
+ * Nettoie la précision "Autre" avant de l'insérer dans le prompt : une seule
+ * ligne, espaces compactés, guillemets retirés (le texte est cité entre
+ * guillemets dans le prompt), longueur bornée.
+ */
+export function cleanCustomCategory(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const cleaned = value.replace(/["«»“”]/g, "").replace(/\s+/g, " ").trim().slice(0, MAX_CUSTOM_CATEGORY_LENGTH).trim();
+  return cleaned.length > 0 ? cleaned : null;
+}
 
 /** Traduction des options du formulaire en consignes explicites pour l'IA. */
 const LENGTH_HINTS: Record<NameLength, string> = {

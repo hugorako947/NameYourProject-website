@@ -8,7 +8,7 @@
 // dans un cookie, relu par le serveur à la visite suivante.
 // =============================================================================
 
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { TRANSLATIONS, getLangMeta, type Lang, type Translations } from "@/lib/i18n";
 import { LANG_COOKIE } from "@/lib/locale";
@@ -31,6 +31,8 @@ interface AppContextValue {
   resetCustomColors: () => void;
   lang: Lang;
   setLang: (lang: Lang) => void;
+  /** true pendant que le serveur renvoie la page dans la nouvelle langue */
+  langPending: boolean;
   /** Raccourci : TRANSLATIONS[lang] */
   t: Translations;
   /** Locale de formatage des prix, ex: "fr-FR" */
@@ -84,6 +86,7 @@ export function AppProvider({
   const [customColors, setCustomColors] = useState<CustomColors>(initialCustomColors);
   const [lang, setLangState] = useState<Lang>(initialLang);
   const router = useRouter();
+  const [langPending, startLangTransition] = useTransition();
 
   const setTheme = (next: Theme) => {
     setThemeState(next);
@@ -110,7 +113,7 @@ export function AppProvider({
     document.documentElement.dir = meta.dir;
     // Re-rend les parties calculées par le serveur (pages légales, métadonnées)
     // dans la nouvelle langue, sans recharger la page ni perdre la saisie.
-    router.refresh();
+    startLangTransition(() => router.refresh());
   };
 
   const value: AppContextValue = {
@@ -121,6 +124,7 @@ export function AppProvider({
     resetCustomColors,
     lang,
     setLang,
+    langPending,
     t: TRANSLATIONS[lang],
     locale: getLangMeta(lang).locale,
     currency,

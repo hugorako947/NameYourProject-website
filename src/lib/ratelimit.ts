@@ -23,7 +23,7 @@
 
 import { createHmac } from "node:crypto";
 import { redis, redisToken } from "@/lib/redis";
-import { FREE_GENERATIONS_PER_DAY, FREE_INSIGHTS_PER_DAY } from "@/lib/pricing";
+import { FREE_GENERATIONS_PER_DAY, FREE_INSIGHTS_PER_DAY, FREE_SEARCHES_PER_DAY } from "@/lib/pricing";
 
 export const DAILY_LIMIT = FREE_GENERATIONS_PER_DAY;
 
@@ -34,6 +34,7 @@ export interface QuotaBucket {
 }
 export const GENERATIONS_BUCKET: QuotaBucket = { name: "gen", limit: FREE_GENERATIONS_PER_DAY };
 export const INSIGHTS_BUCKET: QuotaBucket = { name: "insight", limit: FREE_INSIGHTS_PER_DAY };
+export const SEARCHES_BUCKET: QuotaBucket = { name: "search", limit: FREE_SEARCHES_PER_DAY };
 const WINDOW_SECONDS = 24 * 60 * 60;
 const WINDOW_MS = WINDOW_SECONDS * 1000;
 

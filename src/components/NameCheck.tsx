@@ -7,23 +7,24 @@ import {
   CircleQuestionMark,
   ExternalLink,
   Image as ImageIcon,
-  LoaderCircle,
   Scale,
   ScanSearch,
   Search,
   TriangleAlert,
+  Users,
 } from "lucide-react";
 import { useApp } from "@/lib/app-context";
 import { cn } from "@/lib/utils";
+import { googleImagesUrl, googleSearchUrl, wipoBrandSearchUrl } from "@/lib/web-links";
+import { Spinner } from "./ui/Spinner";
 import type { ApiErrorBody, ApiErrorCode, InsightVerdict, NameInsightRequest, NameInsightResponse } from "@/types";
 
 // =============================================================================
 // Vérifier un nom généré, sous chaque carte de résultat :
-//   • 3 liens rapides : Google (nom exact), Google Images, base de marques OMPI
-//   • « Qu'évoque ce nom ? » : recherche Google + résumé par l'IA, à la demande
+//   • liens rapides : Google, Google Images, base de marques OMPI (recherche
+//     déjà lancée), page Concurrence (/concurrence, nom déjà rempli)
+//   • « Qu'évoque ce nom ? » : recherche sur le web + résumé par l'IA, à la demande
 // =============================================================================
-
-const WIPO_BRAND_DB = "https://branddb.wipo.int/";
 
 const VERDICT_STYLE: Record<InsightVerdict, { Icon: typeof CircleCheck; className: string }> = {
   FREE: { Icon: CircleCheck, className: "text-accent" },
@@ -42,20 +43,18 @@ export function NameCheck({ name }: { name: string }) {
   const [error, setError] = useState<ApiErrorCode | null>(null);
   const [data, setData] = useState<NameInsightResponse | null>(null);
 
-  const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(`"${name}"`)}`;
-  const imagesUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(name)}`;
-
-  async function openTrademarks() {
-    // La base de l'OMPI n'accepte pas de recherche pré-remplie par lien :
-    // on copie le nom pour que l'utilisateur n'ait plus qu'à le coller.
-    try {
-      await navigator.clipboard.writeText(name);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 4000);
-    } catch {
-      // presse-papiers indisponible : on ouvre quand même la base
-    }
-    window.open(WIPO_BRAND_DB, "_blank", "noopener,noreferrer");
+  function openTrademarks() {
+    // Onglet ouvert AVANT toute attente : sinon certains navigateurs le bloquent
+    window.open(wipoBrandSearchUrl(name), "_blank", "noopener,noreferrer");
+    // Secours : si l'OMPI affiche une recherche vide (changement de son site,
+    // anti-robot…), le nom est déjà copié et n'a plus qu'à être collé.
+    navigator.clipboard
+      ?.writeText(name)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 4000);
+      })
+      .catch(() => undefined);
   }
 
   async function analyze() {
@@ -82,11 +81,11 @@ export function NameCheck({ name }: { name: string }) {
   return (
     <div className="mt-4">
       <div className="flex flex-wrap items-center gap-2">
-        <a href={googleUrl} target="_blank" rel="noopener noreferrer" className={pill}>
+        <a href={googleSearchUrl(name)} target="_blank" rel="noopener noreferrer" className={pill}>
           <Search aria-hidden className="h-3.5 w-3.5" />
           {t.checkGoogle}
         </a>
-        <a href={imagesUrl} target="_blank" rel="noopener noreferrer" className={pill}>
+        <a href={googleImagesUrl(name)} target="_blank" rel="noopener noreferrer" className={pill}>
           <ImageIcon aria-hidden className="h-3.5 w-3.5" />
           {t.checkImages}
         </a>
@@ -94,6 +93,11 @@ export function NameCheck({ name }: { name: string }) {
           <Scale aria-hidden className="h-3.5 w-3.5" />
           {t.checkTrademarks}
         </button>
+        {/* Nouvel onglet : les noms générés restent affichés sur cette page */}
+        <a href={`/concurrence?q=${encodeURIComponent(name)}`} target="_blank" rel="noopener noreferrer" className={pill}>
+          <Users aria-hidden className="h-3.5 w-3.5" />
+          {t.checkCompetitors}
+        </a>
         {!insight && (
           <button
             type="button"
@@ -102,7 +106,7 @@ export function NameCheck({ name }: { name: string }) {
             className={cn(pill, "border-accent/70 font-semibold text-ink hover:border-accent hover:bg-accent/10 disabled:opacity-70")}
           >
             {loading ? (
-              <LoaderCircle aria-hidden className="h-3.5 w-3.5 animate-spin" />
+              <Spinner className="h-3.5 w-3.5" />
             ) : (
               <ScanSearch aria-hidden className="h-3.5 w-3.5 text-accent" />
             )}

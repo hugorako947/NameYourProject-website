@@ -19,7 +19,7 @@ export function loc(value: Localized, lang: "fr" | "en"): string {
 
 export const LEGAL = {
   /** Date de dernière mise à jour des documents (AAAA-MM-JJ) */
-  lastUpdated: "2026-09-29",
+  lastUpdated: "2026-10-24",
 
   /** Éditeur du site */
   publisher: {
